@@ -1,11 +1,10 @@
-// Piston API is a service for code execution
+// Judge0 CE API via RapidAPI
+const JUDGE0_API_URL = import.meta.env.VITE_JUDGE0_API_URL || "https://judge0-ce.p.rapidapi.com";
 
-const PISTON_API = "https://emkc.org/api/v2/piston";
-
-const LANGUAGE_VERSIONS = {
-  javascript: { language: "javascript", version: "18.15.0" },
-  python: { language: "python", version: "3.10.0" },
-  java: { language: "java", version: "15.0.2" },
+const LANGUAGE_IDS = {
+  javascript: 63,
+  python: 71,
+  java: 62,
 };
 
 /**
@@ -15,29 +14,35 @@ const LANGUAGE_VERSIONS = {
  */
 export async function executeCode(language, code) {
   try {
-    const languageConfig = LANGUAGE_VERSIONS[language];
+    const languageId = LANGUAGE_IDS[language];
 
-    if (!languageConfig) {
+    if (!languageId) {
       return {
         success: false,
         error: `Unsupported language: ${language}`,
       };
     }
 
-    const response = await fetch(`${PISTON_API}/execute`, {
+    const rapidApiKey = import.meta.env.VITE_JUDGE0_API_KEY;
+    const rapidApiHost = import.meta.env.VITE_JUDGE0_API_HOST || "judge0-ce.p.rapidapi.com";
+
+    if (!rapidApiKey) {
+      return {
+        success: false,
+        error: "Missing Judge0 API key. Set VITE_JUDGE0_API_KEY in frontend env.",
+      };
+    }
+
+    const response = await fetch(`${JUDGE0_API_URL}/submissions?base64_encoded=false&wait=true`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
+        "x-rapidapi-key": rapidApiKey,
+        "x-rapidapi-host": rapidApiHost,
       },
       body: JSON.stringify({
-        language: languageConfig.language,
-        version: languageConfig.version,
-        files: [
-          {
-            name: `main.${getFileExtension(language)}`,
-            content: code,
-          },
-        ],
+        language_id: languageId,
+        source_code: code,
       }),
     });
 
@@ -50,20 +55,23 @@ export async function executeCode(language, code) {
 
     const data = await response.json();
 
-    const output = data.run.output || "";
-    const stderr = data.run.stderr || "";
+    const output = data.stdout || "";
+    const stderr = data.stderr || "";
+    const compileOutput = data.compile_output || "";
+    const message = data.message || "";
+    const statusDescription = data.status?.description || "";
 
-    if (stderr) {
+    if (stderr || compileOutput || message) {
       return {
         success: false,
-        output: output,
-        error: stderr,
+        output,
+        error: stderr || compileOutput || message || statusDescription || "Execution failed",
       };
     }
 
     return {
       success: true,
-      output: output || "No output",
+      output: output || statusDescription || "No output",
     };
   } catch (error) {
     return {
@@ -71,14 +79,4 @@ export async function executeCode(language, code) {
       error: `Failed to execute code: ${error.message}`,
     };
   }
-}
-
-function getFileExtension(language) {
-  const extensions = {
-    javascript: "js",
-    python: "py",
-    java: "java",
-  };
-
-  return extensions[language] || "txt";
 }
