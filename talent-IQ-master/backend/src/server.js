@@ -20,7 +20,9 @@ app.use(express.json());
 app.use(cors({ 
   origin: [
     "https://talentiq-platform-new.vercel.app",
-    "https://www.talentiq.live"
+    "https://talentiq-platform.vercel.app",
+    "https://www.talentiq.live",
+    "https://talentiq.live"
   ], 
   credentials: true 
 }));
