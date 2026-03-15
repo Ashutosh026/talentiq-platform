@@ -1,36 +1,92 @@
-import { StreamVideoClient } from "@stream-io/video-react-sdk";
+import { useState, useEffect } from "react";
+import { StreamChat } from "stream-chat";
+import toast from "react-hot-toast";
+import { initializeStreamClient, disconnectStreamClient } from "../lib/stream";
+import { sessionApi } from "../api/sessions";
 
-const apiKey = import.meta.env.VITE_STREAM_API_KEY;
+function useStreamClient(session, loadingSession, isHost, isParticipant) {
+  const [streamClient, setStreamClient] = useState(null);
+  const [call, setCall] = useState(null);
+  const [chatClient, setChatClient] = useState(null);
+  const [channel, setChannel] = useState(null);
+  const [isInitializingCall, setIsInitializingCall] = useState(true);
 
-let client = null;
+  useEffect(() => {
+    let videoCall = null;
+    let chatClientInstance = null;
 
-export const initializeStreamClient = async (user, token) => {
-  // if client exists with same user instead of creating again return it
+    const initCall = async () => {
+      if (!session?.callId) return;
+      if (!isHost && !isParticipant) return;
+      if (session.status === "completed") return;
 
-  if (client && client?.user?.id === user.id) return client;
+      try {
+        const { token, userId, userName, userImage } = await sessionApi.getStreamToken();
 
-  if (client) {
-    await disconnectStreamClient();
-  }
+        const client = await initializeStreamClient(
+          {
+            id: userId,
+            name: userName,
+            image: userImage,
+          },
+          token
+        );
 
-  if (!apiKey) throw new Error("Stream API key is not provided.");
+        setStreamClient(client);
 
-  client = new StreamVideoClient({
-    apiKey,
-    user,
-    token,
-  });
+        videoCall = client.call("default", session.callId);
+        await videoCall.join({ create: true });
+        setCall(videoCall);
 
-  return client;
-};
+        const apiKey = import.meta.env.VITE_STREAM_API_KEY;
+        chatClientInstance = StreamChat.getInstance(apiKey);
 
-export const disconnectStreamClient = async () => {
-  if (client) {
-    try {
-      await client.disconnectUser();
-      client = null;
-    } catch (error) {
-      console.error("Error disconnecting Stream client:", error);
-    }
-  }
-};
+        await chatClientInstance.connectUser(
+          {
+            id: userId,
+            name: userName,
+            image: userImage,
+          },
+          token
+        );
+        setChatClient(chatClientInstance);
+
+        const chatChannel = chatClientInstance.channel("messaging", session.callId);
+        await chatChannel.watch();
+        setChannel(chatChannel);
+      } catch (error) {
+        toast.error("Failed to join video call");
+        console.error("Error init call:", error);
+        console.error("Error message:", error.message);
+        console.error("Error details:", JSON.stringify(error, null, 2));
+        console.error("Error stack:", error.stack);
+      } finally {
+        setIsInitializingCall(false);
+      }
+    };
+
+    if (session && !loadingSession) initCall();
+
+    return () => {
+      (async () => {
+        try {
+          if (videoCall) await videoCall.leave();
+          if (chatClientInstance) await chatClientInstance.disconnectUser();
+          await disconnectStreamClient();
+        } catch (error) {
+          console.error("Cleanup error:", error);
+        }
+      })();
+    };
+  }, [session, loadingSession, isHost, isParticipant]);
+
+  return {
+    streamClient,
+    call,
+    chatClient,
+    channel,
+    isInitializingCall,
+  };
+}
+
+export default useStreamClient;
