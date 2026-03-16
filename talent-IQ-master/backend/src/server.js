@@ -9,6 +9,7 @@ import { inngest, functions } from "./lib/inngest.js";
 
 import chatRoutes from "./routes/chatRoutes.js";
 import sessionRoutes from "./routes/sessionRoute.js";
+import { protectRoute } from "./middleware/protectRoute.js";
 
 const app = express();
 
@@ -29,6 +30,12 @@ app.use(clerkMiddleware());
 
 app.use("/api/inngest", serve({ client: inngest, functions }));
 app.use("/api/chat", chatRoutes);
+
+// DEBUG - remove after testing
+app.get("/api/test-auth", protectRoute, (req, res) => {
+  res.json({ message: "Auth working!", user: req.user });
+});
+
 app.use("/api/sessions", sessionRoutes);
 
 app.get("/health", (req, res) => {
