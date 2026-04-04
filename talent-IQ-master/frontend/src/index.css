@@ -13,15 +13,8 @@
 :root{--green:#00E5A0;--green-dark:#00A36B;--green-glow:#00E5A022;--green-border:#00E5A025;--bg:#080A0D;--bg2:#0C0F13;--surface:#111520;--surface2:#161C28;--border:#ffffff08;--border2:#ffffff12;--border3:#ffffff20;--text:#EEF2FF;--text2:#7A8499;--text3:#3A4255;--purple:#8B7CF6;--amber:#F59E0B;--blue:#60A5FA;--red:#F87171;}
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{scroll-behavior:smooth;}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;cursor:none;min-height:100vh;}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden;min-height:100vh;}
 body::after{content:'';position:fixed;inset:0;background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");pointer-events:none;z-index:0;opacity:.35;}
-
-/* CURSOR */
-#cur{width:8px;height:8px;background:var(--green);border-radius:50%;position:fixed;pointer-events:none;z-index:9999;transform:translate(-50%,-50%);transition:width .15s,height .15s,background .15s;mix-blend-mode:screen;}
-#cur-ring{width:32px;height:32px;border:1.5px solid var(--green);border-radius:50%;position:fixed;pointer-events:none;z-index:9998;transform:translate(-50%,-50%);opacity:.45;transition:width .25s,height .25s,opacity .25s,border-color .25s;}
-body.hovering #cur{width:14px;height:14px;background:#fff;}
-body.hovering #cur-ring{width:50px;height:50px;opacity:.2;border-color:#fff;}
-#spotlight{position:fixed;width:300px;height:300px;border-radius:50%;pointer-events:none;z-index:5;transform:translate(-50%,-50%);background:radial-gradient(circle,rgba(0,229,160,.06) 0%,transparent 70%);}
 
 /* NAV */
 nav{display:flex;align-items:center;justify-content:space-between;padding:18px 64px;border-bottom:1px solid var(--border);position:sticky;top:0;background:rgba(8,10,13,.85);backdrop-filter:blur(24px);z-index:100;animation:slideDown .6s ease both;}
