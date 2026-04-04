@@ -13,7 +13,14 @@ if (!PUBLISHABLE_KEY) {
   throw new Error("Missing Clerk Publishable Key");
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1, // Only retry once instead of 3 times
+      refetchOnWindowFocus: false, // Prevent spamming console errors when switching tabs while backend is down
+    },
+  },
+});
 
 createRoot(document.getElementById("root")).render(
   <StrictMode>

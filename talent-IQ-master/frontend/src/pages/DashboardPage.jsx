@@ -59,12 +59,6 @@ function DashboardPage() {
           margin: 0 auto;
           padding: 0 24px 80px;
         }
-        .dashboard-grid {
-          display: grid;
-          grid-template-columns: 280px 1fr 1fr;
-          gap: 20px;
-          margin-bottom: 0;
-        }
         .recent-radar-row {
           display: flex;
           gap: 20px;
@@ -78,11 +72,9 @@ function DashboardPage() {
           display: flex;
         }
         @media(max-width:1024px){
-          .dashboard-grid { grid-template-columns: 1fr 1fr; }
           .recent-radar-row { flex-direction: column; }
         }
         @media(max-width:640px){
-          .dashboard-grid { grid-template-columns: 1fr; }
           .dashboard-container { padding: 0 16px 60px; }
         }
         .streak-banner {
@@ -127,8 +119,11 @@ function DashboardPage() {
             </div>
           )}
 
-          <div className="dashboard-grid">
+          <div style={{ marginBottom: '24px' }}>
             <StatsCards />
+          </div>
+
+          <div style={{ marginBottom: '24px' }}>
             <ActiveSessions
               sessions={activeSessions}
               isLoading={loadingActiveSessions}
