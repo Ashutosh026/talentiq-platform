@@ -1,7 +1,18 @@
 import express from 'express';
 import Subscriber from '../models/Subscriber.js';
+import { fetchJobs, fetchArticles } from '../lib/newsletterCron.js';
 
 const router = express.Router();
+
+router.get('/preview', async (req, res) => {
+    try {
+        const [jobs, articles] = await Promise.all([fetchJobs(), fetchArticles()]);
+        res.status(200).json({ jobs, articles });
+    } catch (err) {
+        console.error('Failed to fetch newsletter preview:', err);
+        res.status(500).json({ error: 'Failed to fetch preview' });
+    }
+});
 
 router.post('/subscribe', async (req, res) => {
     try {

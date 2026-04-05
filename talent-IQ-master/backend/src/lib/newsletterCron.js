@@ -3,7 +3,7 @@ import nodemailer from "nodemailer";
 import Subscriber from "../models/Subscriber.js";
 
 // Fetch remote software engineering jobs using Remotive zero-auth API
-const fetchJobs = async () => {
+export const fetchJobs = async () => {
     try {
         // Fetch a larger batch so we can aggressively filter them locally for freshers
         const res = await fetch("https://remotive.com/api/remote-jobs?category=software-dev&limit=100");
@@ -40,7 +40,7 @@ const fetchJobs = async () => {
 };
 
 // Fetch AI & Software articles using Dev.to API
-const fetchArticles = async () => {
+export const fetchArticles = async () => {
     try {
         const res = await fetch("https://dev.to/api/articles?tag=ai&top=1&per_page=5");
         const data = await res.json();

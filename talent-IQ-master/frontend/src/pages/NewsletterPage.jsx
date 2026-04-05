@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Navbar from "../components/Navbar";
 import axiosInstance from "../lib/axios";
 import { toast } from "react-hot-toast";
@@ -6,6 +6,20 @@ import { toast } from "react-hot-toast";
 function NewsletterPage() {
   const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [previewData, setPreviewData] = useState({ jobs: [], articles: [], loading: true });
+
+  useEffect(() => {
+    const fetchPreview = async () => {
+      try {
+        const res = await axiosInstance.get("/newsletter/preview");
+        setPreviewData({ jobs: res.data.jobs, articles: res.data.articles, loading: false });
+      } catch (err) {
+        console.error("Failed to load preview", err);
+        setPreviewData(prev => ({ ...prev, loading: false }));
+      }
+    };
+    fetchPreview();
+  }, []);
 
   const handleSubscribe = async (e) => {
     e.preventDefault();
@@ -15,7 +29,6 @@ function NewsletterPage() {
       setIsLoading(true);
       const res = await axiosInstance.post("/newsletter/subscribe", { email });
       
-      // Axios success (react-hot-toast handles notifications generally but we show explicitly)
       toast.success(res.data?.message || "Successfully subscribed!");
       setEmail("");
     } catch (err) {
@@ -39,18 +52,25 @@ function NewsletterPage() {
         .sub-input:focus { border-color: #00E5A0; background: #161C28; }
         .sub-btn { width: 100%; background: #00E5A0; color: #0A0C0F; border: none; padding: 14px; border-radius: 8px; font-weight: 700; font-size: 15px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: center; align-items: center; }
         .sub-btn:hover { background: #00faaf; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0, 229, 160, 0.2); }
-        .sub-btn:disabled { background: #161C28; color: #7A8499; cursor: not-allowed; transform: none; box-shadow: none; }
         
-        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 900px; margin: 60px auto 0; padding: 0 24px; }
-        .feat-card { text-align: center; padding: 24px; border: 1px solid rgba(255, 255, 255, 0.03); border-radius: 12px; background: rgba(255, 255, 255, 0.01); }
-        .feat-icon { font-size: 24px; margin-bottom: 12px; display: inline-block; }
-        .feat-title { font-weight: 700; font-size: 15px; color: #EEF2FF; margin-bottom: 8px; }
-        .feat-desc { font-size: 13px; color: #7A8499; line-height: 1.5; }
+        .preview-section { max-width: 1000px; margin: 80px auto 0; padding: 0 24px; }
+        .preview-header { font-family: 'Syne', sans-serif; border-bottom: 1px solid #161C28; padding-bottom: 12px; margin-bottom: 24px; font-size: 1.5rem; display: flex; align-items: center; gap: 12px; }
         
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
         @media (max-width: 768px) {
-          .features-grid { grid-template-columns: 1fr; }
-          .hero-title { font-size: 2rem; }
+          .grid-2 { grid-template-columns: 1fr; }
         }
+
+        .article-card { background: rgba(255,255,255,0.01); border: 1px solid #161C28; border-radius: 12px; padding: 20px; transition: all 0.2s; text-decoration: none; display: block; margin-bottom: 16px; }
+        .article-card:hover { border-color: #8B7CF650; background: rgba(139, 124, 246, 0.05); transform: translateY(-2px); }
+        .article-title { color: #8B7CF6; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; line-height: 1.4; }
+        .article-meta { color: #7A8499; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+
+        .job-card { background: rgba(255,255,255,0.01); border: 1px solid #161C28; border-radius: 12px; padding: 20px; transition: all 0.2s; text-decoration: none; display: block; margin-bottom: 16px; }
+        .job-card:hover { border-color: #00E5A050; background: rgba(0, 229, 160, 0.05); transform: translateY(-2px); }
+        .job-title { color: #00E5A0; font-size: 1.1rem; font-weight: 700; margin-bottom: 8px; }
+        .job-meta { color: #7A8499; font-size: 13px; font-family: 'JetBrains Mono', monospace; }
+        .badge { background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 4px; color: #EEF2FF; font-size: 11px; margin-right: 8px; }
       `}</style>
 
       <div className="news-root">
@@ -59,7 +79,7 @@ function NewsletterPage() {
         <div className="hero-section px-4">
           <h1 className="hero-title">The Daily <span style={{ color: '#00E5A0' }}>Algorithm</span></h1>
           <p className="hero-subtitle">
-            A premium daily dispatch of the highest-rated Artificial Intelligence insights and hand-picked remote software engineering opportunities.
+            A premium daily dispatch of the highest-rated Artificial Intelligence insights and hand-picked remote entry-level software engineering opportunities.
           </p>
 
           <div className="sub-container">
@@ -82,26 +102,60 @@ function NewsletterPage() {
           </div>
         </div>
 
-        <div className="features-grid">
-          <div className="feat-card">
-            <span className="feat-icon">🔥</span>
-            <div className="feat-title">AI & Tech Pulse</div>
-            <div className="feat-desc">Hand-curated software engineering and artificial intelligence topics straight from DEV.to.</div>
-          </div>
-          <div className="feat-card">
-            <span className="feat-icon">💼</span>
-            <div className="feat-title">Remote Opportunities</div>
-            <div className="feat-desc">The freshest remote developer positions aggregated directly into your inbox.</div>
-          </div>
-          <div className="feat-card">
-            <span className="feat-icon">⚡</span>
-            <div className="feat-title">Zero Friction</div>
-            <div className="feat-desc">Read everything from your inbox without leaving your IDE or workflow.</div>
-          </div>
+        {/* Live Preview Section */}
+        <div className="preview-section">
+          {previewData.loading ? (
+             <div style={{ textAlign: 'center', color: '#7A8499', padding: '40px' }}>Loading today's live preview...</div>
+          ) : (
+            <div className="grid-2">
+               {/* Left Column: AI News */}
+               <div>
+                 <h2 className="preview-header">
+                   <span style={{ color: '#8B7CF6' }}>🔥</span> Today's AI & Tech News
+                 </h2>
+                 {previewData.articles.length > 0 ? (
+                    previewData.articles.map(article => (
+                      <a href={article.url} target="_blank" rel="noreferrer" key={article.id} className="article-card">
+                        <div className="article-title">{article.title}</div>
+                        <div className="article-meta">By {article.user.name} • {article.reading_time_minutes} min read</div>
+                      </a>
+                    ))
+                 ) : (
+                    <div style={{ color: '#7A8499' }}>No trending articles found today.</div>
+                 )}
+               </div>
+
+               {/* Right Column: Fresher Jobs */}
+               <div>
+                 <h2 className="preview-header">
+                   <span style={{ color: '#00E5A0' }}>💼</span> Remote Entry-Level Jobs
+                 </h2>
+                 {previewData.jobs.length > 0 ? (
+                    previewData.jobs.map(job => (
+                      <a href={job.url} target="_blank" rel="noreferrer" key={job.id} className="job-card">
+                        <div className="job-title">{job.title}</div>
+                        <div className="job-meta">
+                          <span className="badge">{job.company_name}</span>
+                          <span className="badge">{job.job_type || "Remote"}</span>
+                        </div>
+                      </a>
+                    ))
+                 ) : (
+                    <div style={{ padding: '20px', background: '#111520', borderRadius: '8px', color: '#A0ABC0', fontSize: '14px', lineHeight: '1.6' }}>
+                      <strong>Zero active listings found right now.</strong><br/>
+                      Our rigorous filter rejected all new job posts today because they either required senior experience or weren't strictly entry-level remote. <br/><br/>Subscribe above, and we'll alert you the moment a verified fresher position opens up!
+                    </div>
+                 )}
+               </div>
+            </div>
+          )}
         </div>
+        
       </div>
     </>
   );
 }
 
 export default NewsletterPage;
+
+
