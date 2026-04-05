@@ -28,10 +28,15 @@ function ProblemDescription({ problem }) {
       </div>
 
       <div className="pd-glass-container">
-        <p className="pd-text" style={{ marginBottom: problem.description.notes?.length ? '16px' : '0' }}>{problem.description.text}</p>
+        {/* If the text contains HTML tags (like from ALFA API), render it. Otherwise standard text */}
+        <div 
+          className="pd-text" 
+          dangerouslySetInnerHTML={{ __html: problem.description.text }}
+          style={{ marginBottom: problem.description.notes?.length ? '16px' : '0' }}
+        />
         
         {problem.description.notes && problem.description.notes.map((note, idx) => (
-          <p key={idx} className="pd-text" style={{ marginBottom: idx !== problem.description.notes.length - 1 ? '16px' : '0' }}>{note}</p>
+          <div key={idx} className="pd-text" style={{ marginBottom: idx !== problem.description.notes.length - 1 ? '16px' : '0' }} dangerouslySetInnerHTML={{ __html: note }} />
         ))}
       </div>
 

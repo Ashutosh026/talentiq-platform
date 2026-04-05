@@ -72,7 +72,7 @@ const mockProblems = [
 export const syncProblems = async () => {
     try {
         console.log("Connecting to MongoDB for sync...");
-        await mongoose.connect(process.env.MONGODB_URI);
+        await mongoose.connect(process.env.DB_URL);
         console.log("Connected to MongoDB successfully");
 
         // We can add actual Leetcode API fetching logic here!
