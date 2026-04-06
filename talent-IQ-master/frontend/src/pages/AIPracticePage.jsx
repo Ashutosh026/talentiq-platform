@@ -39,6 +39,12 @@ function AIPracticePage() {
   const [evaluation, setEvaluation] = useState(null);
   const [evaluating, setEvaluating] = useState(false);
 
+  // Voice AI State
+  const [isListening, setIsListening] = useState(false);
+  const [aiSpeaking, setAiSpeaking] = useState(false);
+  const recognitionRef = useRef(null);
+  const synthRef = useRef(window.speechSynthesis);
+
   const chatBottomRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -48,6 +54,87 @@ function AIPracticePage() {
       chatBottomRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [answers, followUpText, currentQIndex]);
+
+  // Setup Web Speech API (Speech-to-Text)
+  useEffect(() => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = true;
+      recognition.interimResults = true;
+      recognition.lang = "en-US";
+
+      recognition.onresult = (event) => {
+        let final = "";
+        for (let i = event.resultIndex; i < event.results.length; i++) {
+          if (event.results[i].isFinal) {
+            final += event.results[i][0].transcript;
+          }
+        }
+        if (final) {
+          setInputText((prev) => prev + (prev.endsWith(" ") || prev === "" ? "" : " ") + final);
+        }
+      };
+
+      recognition.onerror = (e) => {
+        console.error("Speech reco error:", e);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => setIsListening(false);
+      recognitionRef.current = recognition;
+    }
+    
+    // Stop speaking when leaving page
+    return () => {
+      synthRef.current?.cancel();
+    };
+  }, []);
+
+  // Text-to-Speech Helper
+  const speakText = (text) => {
+    if (!synthRef.current) return;
+    synthRef.current.cancel(); 
+    
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(text);
+      const voices = synthRef.current.getVoices();
+      
+      // Try to grab a premium sounding voice like Google US or Samantha
+      const preferred = voices.find(v => v.name.includes("Google US") || v.name.includes("Samantha") || v.lang === "en-US");
+      if (preferred) utterance.voice = preferred;
+      
+      utterance.onstart = () => setAiSpeaking(true);
+      utterance.onend = () => setAiSpeaking(false);
+      utterance.onerror = () => setAiSpeaking(false);
+      
+      synthRef.current.speak(utterance);
+    }, 50);
+  };
+
+  const toggleListening = () => {
+    if (isListening) {
+      recognitionRef.current?.stop();
+    } else {
+      synthRef.current?.cancel(); // Mute AI so it doesn't record itself
+      recognitionRef.current?.start();
+      setIsListening(true);
+    }
+  };
+
+  // Trigger initial AI voice when interview starts
+  useEffect(() => {
+    if (phase === PHASE.INTERVIEW && questions.length > 0 && currentQIndex === 0 && !answers[questions[0].id]) {
+       speakText(`Welcome to your mock interview. Let's begin. Question 1. ${questions[0].question}`);
+    }
+  }, [phase]);
+
+  // Trigger voice on next question
+  useEffect(() => {
+     if (phase === PHASE.INTERVIEW && currentQIndex > 0 && questions[currentQIndex]) {
+       speakText(`Question ${currentQIndex + 1}. ${questions[currentQIndex].question}`);
+     }
+  }, [currentQIndex]);
 
   // ─── File handling ───────────────────────────────────────────────────────────
   const handleFile = async (file) => {
@@ -110,6 +197,8 @@ function AIPracticePage() {
       }));
       setFollowUpText(followUp);
       setShowFollowUp(true);
+      if (isListening) toggleListening(); // Auto-stop listening
+      speakText(followUp);
     } catch {
       setAnswers((prev) => ({
         ...prev,
@@ -117,6 +206,7 @@ function AIPracticePage() {
       }));
       setFollowUpText("Let's continue.");
       setShowFollowUp(true);
+      speakText("Let's continue.");
     } finally {
       setIsLoading(false);
     }
@@ -248,6 +338,19 @@ function AIPracticePage() {
         .btn-submit:disabled { opacity: 0.5; cursor: not-allowed; }
         .btn-skip { padding: 11px 16px; background: transparent; border: 1px solid #ffffff20; border-radius: 8px; color: #7A8499; font-size: 13px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: 0.2s; }
         .btn-skip:hover { border-color: #F87171; color: #F87171; }
+        
+        .btn-mic { padding: 11px; background: transparent; border: 1px solid #ffffff20; border-radius: 8px; color: #EEF2FF; font-size: 16px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 44px; }
+        .btn-mic:hover { border-color: #F87171; color: #F87171; background: #F8717110; }
+        .btn-mic.recording { background: #F8717115; border-color: #F87171; color: #F87171; animation: micPulse 1.5s infinite; }
+        @keyframes micPulse {
+          0% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0.4); }
+          70% { box-shadow: 0 0 0 10px rgba(248, 113, 113, 0); }
+          100% { box-shadow: 0 0 0 0 rgba(248, 113, 113, 0); }
+        }
+        
+        .ai-avatar.speaking { animation: pulseAi 1.5s infinite; border-color: #00E5A0; box-shadow: 0 0 12px #00E5A040; }
+        @keyframes pulseAi { 0% { transform: scale(1); } 50% { transform: scale(1.08); } 100% { transform: scale(1); } }
+
         .btn-next { padding: 11px 18px; background: #00E5A015; border: 1px solid #00E5A040; border-radius: 8px; color: #00E5A0; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: 0.2s; }
         .btn-next:hover { background: #00E5A025; }
         .btn-finish { flex: 1; padding: 11px; background: linear-gradient(135deg, #F59E0B, #F87171); border: none; border-radius: 8px; color: #fff; font-size: 13px; font-weight: 700; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: 0.2s; }
@@ -504,7 +607,7 @@ function AIPracticePage() {
                   <div className="chat-area">
                     {/* Current question from AI */}
                     <div className="msg-ai">
-                      <div className="ai-avatar">
+                      <div className={`ai-avatar ${aiSpeaking && !answers[currentQ?.id] ? "speaking" : ""}`}>
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                           <circle cx="12" cy="8" r="4" stroke="#00E5A0" strokeWidth="1.5"/>
                           <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#00E5A0" strokeWidth="1.5" strokeLinecap="round"/>
@@ -526,7 +629,7 @@ function AIPracticePage() {
                         </div>
                         {/* Show stored follow-up */}
                         <div className="msg-ai">
-                          <div className="ai-avatar">
+                          <div className={`ai-avatar ${aiSpeaking ? "speaking" : ""}`}>
                             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
                               <circle cx="12" cy="8" r="4" stroke="#00E5A0" strokeWidth="1.5"/>
                               <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="#00E5A0" strokeWidth="1.5" strokeLinecap="round"/>
@@ -575,10 +678,18 @@ function AIPracticePage() {
                           disabled={isLoading}
                         />
                         <div className="int-actions">
-                          <button className="btn-skip" onClick={() => submitAnswer(true)} disabled={isLoading}>
+                          <button 
+                            className={`btn-mic ${isListening ? "recording" : ""}`} 
+                            title={isListening ? "Stop Recording" : "Speak Answer"}
+                            onClick={toggleListening} 
+                            disabled={isLoading}
+                          >
+                            {isListening ? "⏹" : "🎤"}
+                          </button>
+                          <button className="btn-skip" onClick={() => submitAnswer(true)} disabled={isLoading || isListening}>
                             Skip →
                           </button>
-                          <button className="btn-submit" onClick={() => submitAnswer(false)} disabled={isLoading || !inputText.trim()}>
+                          <button className="btn-submit" onClick={() => submitAnswer(false)} disabled={isLoading || isListening || !inputText.trim()}>
                             {isLoading ? "Thinking..." : "Submit Answer"}
                           </button>
                         </div>
