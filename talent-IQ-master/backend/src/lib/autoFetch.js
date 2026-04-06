@@ -14,10 +14,23 @@ export const autoFetchLeetCodeProblems = async () => {
 
         // Use ALFA api simply to get a raw list of the latest problem slugs. This endpoint is rarely rate-limited.
         const listResponse = await fetch(`https://alfa-leetcode-api.onrender.com/problems?limit=${FETCH_LIMIT}`);
-        const listData = await listResponse.json();
+        
+        if (!listResponse.ok) {
+            const text = await listResponse.text();
+            console.error(`[Auto-Fetch] List API returned ${listResponse.status}: ${text.substring(0, 100)}`);
+            return;
+        }
 
-        if (!listData.problemsetQuestionList) {
-            console.error("Failed to fetch the problem index.");
+        let listData;
+        try {
+            listData = await listResponse.json();
+        } catch (err) {
+            console.error("[Auto-Fetch] Failed to parse JSON from problem list response.");
+            return;
+        }
+
+        if (!listData || !listData.problemsetQuestionList) {
+            console.error("Failed to fetch the problem index. Invalid response format.");
             return;
         }
 
