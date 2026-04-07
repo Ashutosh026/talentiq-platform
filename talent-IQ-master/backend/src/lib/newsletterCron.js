@@ -1,6 +1,11 @@
 import fetch from "node-fetch";
 import nodemailer from "nodemailer";
+import dns from "dns";
 import Subscriber from "../models/Subscriber.js";
+
+// Force Node.js to resolve connections using IPv4 first.
+// This prevents ENETUNREACH errors on cloud hosts (like Railway) that lack IPv6 routes.
+dns.setDefaultResultOrder('ipv4first');
 
 // Fetch fresher software engineering jobs in India using Adzuna API
 export const fetchJobs = async () => {
@@ -110,7 +115,9 @@ export const dispatchDailyNewsletter = async () => {
 
         // Setup Nodemailer Config (Defaults to Gmail)
         const transporter = nodemailer.createTransport({
-            service: 'gmail',
+            host: "smtp.gmail.com",
+            port: 465,
+            secure: true,
             auth: {
                 user: mailUser,
                 pass: mailPass
