@@ -26,7 +26,8 @@ app.use(cors({
   origin: [
     "https://talentiq-platform-new.vercel.app",
     "https://www.talentiq.live",
-    "http://localhost:5173"
+    "http://localhost:5173",
+    "https://talentiq-platform-production-32ce.up.railway.app"
   ],
   credentials: true 
 }));
