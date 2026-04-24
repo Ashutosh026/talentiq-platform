@@ -1,6 +1,5 @@
 <!-- INTRO UI -->
 <div align="center">
-  <img src="https://raw.githubusercontent.com/abhishekkr3003/talent-IQ/main/frontend/src/assets/logo.png" alt="TalentIQ Logo" width="120" style="border-radius: 20px" onError="this.style.display='none'" />
   <h1 style="border-bottom: none; margin-top: 10px;">TalentIQ Platform 🚀</h1>
   <p><strong>The ultimate, open-source AI career copilot and engineering toolkit.</strong></p>
   
